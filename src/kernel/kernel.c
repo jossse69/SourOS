@@ -4,17 +4,17 @@
 #include "lib/terminal.h"
 #include "lib/vga.h"
 #include "lib/stringu.h"
+#include "interrupts.h"
 
 void kernel_main(void) 
 {
+    // Initialize the IDT
+    idt_install();
 	// Initialize terminal interface
 	terminal_initialize();
  
-	// Test Terminal scrolling by counting to 100
-    terminal_writestring("Counting to 100...\n");
-    for (int i = 0; i < 100; i++) {
-        terminal_writestring(numbtostr(i));
-        terminal_writestring("\n");
+	// Simple ifinite loop test
+    while (true) {
+        terminal_writestring("test\n");
     }
-    terminal_writestring("100!\nCan you see this text? If so, terminal scrolling is working!\n");
 }
