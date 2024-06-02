@@ -26,17 +26,17 @@ $(BUILD_DIR)/boot.o: src/boot/boot.asm
 	$(NASM) -felf32 $< -o $@
 	$(MKDIR) -p $(BUILD_DIR)/kernel/lib
 
-# Kernel objects
-$(BUILD_DIR)/kernel/%.o: src/kernel/lib/%.c
+
+# Kernel library objects
+$(BUILD_DIR)/kernel/lib/%.o: src/kernel/lib/%.c
 	$(GCC) -c $< -o $@ -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 
 # Kernel
-$(BUILD_DIR)/kernel/kernel.o: src/kernel/kernel.c
-	$(MKDIR) -p $(BUILD_DIR)/kernel/lib
+$(BUILD_DIR)/kernel/kernel.o: src/kernel/kernel.c $(BUILD_DIR)/kernel/lib/terminal.o $(BUILD_DIR)/kernel/lib/vga.o $(BUILD_DIR)/kernel/lib/stringu.o
 	$(GCC) -c $< -o $@ -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 
 # Kernel library
-$(BUILD_DIR)/kernel.o: $(BUILD_DIR)/kernel/kernel.o $(BUILD_DIR)/kernel/terminal.o $(BUILD_DIR)/kernel/vga.o $(BUILD_DIR)/kernel/stringu.o
+$(BUILD_DIR)/kernel.o: $(BUILD_DIR)/kernel/kernel.o $(BUILD_DIR)/kernel/lib/terminal.o $(BUILD_DIR)/kernel/lib/vga.o $(BUILD_DIR)/kernel/lib/stringu.o
 	$(GCC) -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
 
 # Linking
