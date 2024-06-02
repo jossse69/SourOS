@@ -24,23 +24,17 @@ all: $(BUILD_DIR)/SourOS.iso
 $(BUILD_DIR)/boot.o: src/boot/boot.asm
 	$(MKDIR) -p $(dir $@)
 	$(NASM) -felf32 $< -o $@
-	$(MKDIR) -p $(BUILD_DIR)/kernel/lib
-
 
 # Kernel library objects
-$(BUILD_DIR)/kernel/lib/%.o: src/kernel/lib/%.c
-	$(GCC) -c $< -o $@ -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+$(BUILD_DIR)/%.o: src/kernel/lib/%.c
+	$(GCC) -r $< -o $@ -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 
 # Kernel
-$(BUILD_DIR)/kernel/kernel.o: src/kernel/kernel.c $(BUILD_DIR)/kernel/lib/terminal.o $(BUILD_DIR)/kernel/lib/vga.o $(BUILD_DIR)/kernel/lib/stringu.o
-	$(GCC) -c $< -o $@ -std=gnu99 -ffreestanding -O2 -Wall -Wextra
-
-# Kernel library
-$(BUILD_DIR)/kernel.o: $(BUILD_DIR)/kernel/kernel.o $(BUILD_DIR)/kernel/lib/terminal.o $(BUILD_DIR)/kernel/lib/vga.o $(BUILD_DIR)/kernel/lib/stringu.o
-	$(GCC) -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
+$(BUILD_DIR)/kernel.o: src/kernel/kernel.c $(BUILD_DIR)/terminal.o $(BUILD_DIR)/vga.o $(BUILD_DIR)/stringu.o $(patsubst src/kernel/lib/%.c,$(BUILD_DIR)/%.o,$(wildcard src/kernel/lib/*.c))
+	$(GCC) -r $< -o $@ -std=gnu99 -ffreestanding -O2 -Wall -Wextra $(addprefix -L,$(dir $(filter-out $<,$^)))
 
 # Linking
-$(BUILD_DIR)/SourOS.bin: $(BUILD_DIR)/boot.o $(BUILD_DIR)/kernel/kernel.o
+$(BUILD_DIR)/SourOS.bin: $(BUILD_DIR)/boot.o $(BUILD_DIR)/kernel.o $(patsubst src/kernel/lib/%.c,$(BUILD_DIR)/%.o,$(wildcard src/kernel/lib/*.c))
 	$(GCC) -T src/kernel/linker.ld -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
 
 # Multiboot check
@@ -59,6 +53,3 @@ $(BUILD_DIR)/SourOS.iso: $(BUILD_DIR)/SourOS.bin.multiboot $(GRUB_CFG)
 # Cleanup
 clean:
 	$(RM) -rf $(BUILD_DIR) $(BUILD_DIR).iso
-	
-# Default target
-.DEFAULT_GOAL := all
