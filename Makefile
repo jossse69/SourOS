@@ -24,13 +24,23 @@ all: $(BUILD_DIR)/SourOS.iso
 $(BUILD_DIR)/boot.o: src/boot/boot.asm
 	$(MKDIR) -p $(dir $@)
 	$(NASM) -felf32 $< -o $@
+	$(MKDIR) -p $(BUILD_DIR)/kernel/lib
 
-# Kernel
-$(BUILD_DIR)/kernel.o: src/kernel/kernel.c
+# Kernel objects
+$(BUILD_DIR)/kernel/%.o: src/kernel/lib/%.c
 	$(GCC) -c $< -o $@ -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 
+# Kernel
+$(BUILD_DIR)/kernel/kernel.o: src/kernel/kernel.c
+	$(MKDIR) -p $(BUILD_DIR)/kernel/lib
+	$(GCC) -c $< -o $@ -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+
+# Kernel library
+$(BUILD_DIR)/kernel.o: $(BUILD_DIR)/kernel/kernel.o $(BUILD_DIR)/kernel/terminal.o $(BUILD_DIR)/kernel/vga.o $(BUILD_DIR)/kernel/stringu.o
+	$(GCC) -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
+
 # Linking
-$(BUILD_DIR)/SourOS.bin: $(BUILD_DIR)/boot.o $(BUILD_DIR)/kernel.o
+$(BUILD_DIR)/SourOS.bin: $(BUILD_DIR)/boot.o $(BUILD_DIR)/kernel/kernel.o
 	$(GCC) -T src/kernel/linker.ld -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
 
 # Multiboot check
@@ -49,16 +59,6 @@ $(BUILD_DIR)/SourOS.iso: $(BUILD_DIR)/SourOS.bin.multiboot $(GRUB_CFG)
 # Cleanup
 clean:
 	$(RM) -rf $(BUILD_DIR) $(BUILD_DIR).iso
-
-# Check if multiboot file exists before copying
-$(BUILD_DIR)/SourOS.iso: $(BUILD_DIR)/SourOS.bin.multiboot
-ifneq ("$(wildcard $(BUILD_DIR)/SourOS.bin.multiboot)","")
-	$(MKDIR) -p $(ISO_DIR)/boot/grub
-	$(CP) $< $(ISO_DIR)/boot/SourOS.bin
-	$(CP) $(GRUB_CFG) $(ISO_DIR)/boot/grub/grub.cfg
-	$(GRUB_MKRESCUE) -o $@ $(ISO_DIR)
-	@echo "Success!"
-endif
-
+	
 # Default target
 .DEFAULT_GOAL := all

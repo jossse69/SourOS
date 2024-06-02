@@ -1,5 +1,5 @@
-#ifndef TERMINAL_H
-#define TERMINAL_H
+#ifndef VGA_H
+#define VGA_H
 
 #include <stdint.h>
 
@@ -22,14 +22,7 @@ enum vga_color {
     VGA_COLOR_WHITE = 15,
 };
 
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
-static inline uint16_t vga_entry(unsigned char uc, uint8_t color);
-
-void terminal_initialize(void);
-void terminal_setcolor(uint8_t color);
-void terminal_putentryat(char c, uint8_t color, size_t x, size_t y);
-void terminal_putchar(char c);
-void terminal_write(const char* data, size_t size);
-void terminal_writestring(const char* data);
+uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
+uint16_t vga_entry(unsigned char uc, uint8_t color);
 
 #endif
